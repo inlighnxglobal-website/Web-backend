@@ -97,10 +97,17 @@ router.get('/by-name/:name', async (req, res) => {
       .replace(/_/g, ' ')
       .trim();
     
+    // Create a more flexible regex pattern that matches words in any order
+    // e.g., "business analyst" should match "Business Analyst Internship Program"
+    const words = decodedName.split(/\s+/).filter(w => w.length > 0);
+    const regexPattern = words.map(word => 
+      word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    ).join('.*');
+    
     // Search for program by title (case-insensitive, partial match)
+    // Removed status filter to allow fetching all programs
     const program = await Program.findOne({
-      title: { $regex: new RegExp(decodedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') },
-      status: 'active'
+      title: { $regex: new RegExp(regexPattern, 'i') }
     }).select('-__v');
 
     if (!program) {
@@ -145,9 +152,14 @@ router.get('/:id', async (req, res) => {
         .replace(/_/g, ' ')
         .trim();
       
+      // Create a more flexible regex pattern that matches words in any order
+      const words = decodedName.split(/\s+/).filter(w => w.length > 0);
+      const regexPattern = words.map(word => 
+        word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      ).join('.*');
+      
       program = await Program.findOne({
-        title: { $regex: new RegExp(decodedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') },
-        status: 'active'
+        title: { $regex: new RegExp(regexPattern, 'i') }
       }).select('-__v');
     }
 
