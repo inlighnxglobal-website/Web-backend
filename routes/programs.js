@@ -15,13 +15,22 @@ const validateProgram = (data) => {
   }
   if (!data.category || data.category.trim() === '') {
     errors.push('Category is required');
-  } else if (!['Business', 'Development', 'Cybersecurity', 'Data Science'].includes(data.category)) {
-    errors.push('Category must be one of: Business, Development, Cybersecurity, Data Science');
+  } else if (![
+    'Business', 
+    'Development', 
+    'Cybersecurity', 
+    'Data Science',
+    'Business & Analytics',
+    'Cyber Security',
+    'AI & Machine Learning',
+    'Data & Analytics'
+  ].includes(data.category)) {
+    errors.push('Category must be one of: Business, Development, Cybersecurity, Data Science, Business & Analytics, Cyber Security, AI & Machine Learning, Data & Analytics');
   }
   if (!data.level || data.level.trim() === '') {
     errors.push('Level is required');
-  } else if (!['Beginner', 'Intermediate', 'Advanced'].includes(data.level)) {
-    errors.push('Level must be one of: Beginner, Intermediate, Advanced');
+  } else if (!['Beginner', 'Intermediate', 'Advanced', 'Beginner to Intermediate'].includes(data.level)) {
+    errors.push('Level must be one of: Beginner, Intermediate, Advanced, Beginner to Intermediate');
   }
   if (!data.duration || data.duration.trim() === '') {
     errors.push('Duration is required');

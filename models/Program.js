@@ -15,13 +15,22 @@ const programSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    enum: ['Business', 'Development', 'Cybersecurity', 'Data Science']
+    enum: [
+      'Business', 
+      'Development', 
+      'Cybersecurity', 
+      'Data Science',
+      'Business & Analytics',
+      'Cyber Security',
+      'AI & Machine Learning',
+      'Data & Analytics'
+    ]
   },
   level: {
     type: String,
     required: true,
     trim: true,
-    enum: ['Beginner', 'Intermediate', 'Advanced']
+    enum: ['Beginner', 'Intermediate', 'Advanced', 'Beginner to Intermediate']
   },
   duration: {
     type: String,
