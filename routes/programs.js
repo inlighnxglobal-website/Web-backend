@@ -39,11 +39,10 @@ router.get('/', async (req, res) => {
     const { status, category, level, search } = req.query;
     const query = {};
 
-    if (status) {
+    // Only filter by status if explicitly provided
+    // This allows fetching all programs or filtering by status
+    if (status && status !== 'all') {
       query.status = status;
-    } else {
-      // By default, only show active programs
-      query.status = 'active';
     }
     if (category) {
       query.category = category;
