@@ -92,23 +92,63 @@ router.get('/by-name/:name', async (req, res) => {
     const { name } = req.params;
     
     // Decode URL-encoded name and replace hyphens/dashes with spaces for better matching
-    const decodedName = decodeURIComponent(name)
+    let decodedName = decodeURIComponent(name)
       .replace(/-/g, ' ')
       .replace(/_/g, ' ')
       .trim();
     
-    // Create a more flexible regex pattern that matches words in any order
-    // e.g., "business analyst" should match "Business Analyst Internship Program"
-    const words = decodedName.split(/\s+/).filter(w => w.length > 0);
-    const regexPattern = words.map(word => 
-      word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    ).join('.*');
+    // Normalize the search term: handle abbreviations and compound words
+    // e.g., "ai ml" should match "AI & Machine Learning"
+    // e.g., "frontend" should match "Front-End" or "Front End"
+    const normalizeWord = (word) => {
+      // Handle common abbreviations and variations
+      const mappings = {
+        'ai': '(ai|artificial.?intelligence)',
+        'ml': '(ml|machine.?learning)',
+        'frontend': '(front.?end|frontend)',
+        'backend': '(back.?end|backend)',
+        'fullstack': '(full.?stack|fullstack)',
+        'full-stack': '(full.?stack|fullstack)',
+      };
+      
+      const lowerWord = word.toLowerCase();
+      if (mappings[lowerWord]) {
+        return mappings[lowerWord];
+      }
+      return word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
     
-    // Search for program by title (case-insensitive, partial match)
-    // Removed status filter to allow fetching all programs
-    const program = await Program.findOne({
-      title: { $regex: new RegExp(regexPattern, 'i') }
+    // First try: match by detailsLink (most reliable - exact match)
+    let program = await Program.findOne({
+      detailsLink: `/programs/${name}`
     }).select('-__v');
+    
+    // Second try: if not found, try title matching with flexible regex
+    if (!program) {
+      const words = decodedName.split(/\s+/).filter(w => w.length > 0);
+      
+      if (words.length > 0) {
+        // Create regex pattern that matches all words (in any order, with flexible spacing)
+        const regexPattern = words.map(normalizeWord).join('.*');
+        
+        program = await Program.findOne({
+          title: { $regex: new RegExp(regexPattern, 'i') }
+        }).select('-__v');
+        
+        // Third try: if still not found, try matching each word individually (more flexible)
+        if (!program) {
+          // Create a pattern that requires all words to be present (in any order)
+          const allWordsPattern = words.map(w => {
+            const normalized = normalizeWord(w);
+            return `(?=.*${normalized})`;
+          }).join('');
+          
+          program = await Program.findOne({
+            title: { $regex: new RegExp(allWordsPattern, 'i') }
+          }).select('-__v');
+        }
+      }
+    }
 
     if (!program) {
       return res.status(404).json({
