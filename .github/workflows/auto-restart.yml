@@ -1,0 +1,15 @@
+# Simulated request to your render project so that the service doesn't go down
+name: Render keep-alive ping
+
+on:
+  schedule:
+    - cron: '*/12 * * * *'  # Runs every 12 minutes
+  workflow_dispatch:
+
+jobs:
+  curl-website:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run cURL on Website
+        run: curl -I https://web-backend-0aiv.onrender.com
