@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Upload Certificates</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .dropzone {
+            border: 2px dashed #cbd5e0;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .dropzone.dragover {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+        }
+        .progress-bar {
+            transition: width 0.6s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Bulk Upload Certificates</h1>
+            <p class="text-gray-600">Upload an Excel file to add multiple certificates at once</p>
+        </div>
+
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">Instructions</h2>
+            <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                    <li>Download the <a href="/templates/certificate-template.xlsx" class="text-blue-600 hover:underline font-medium">Excel template</a></li>
+                    <li>Fill in the certificate details following the template format</li>
+                    <li>Save the file and upload it using the form below</li>
+                    <li>Click 'Upload Certificates' to process the file</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <div id="dropzone" class="dropzone p-12 text-center cursor-pointer">
+                <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls" />
+                <div class="space-y-4">
+                    <div class="text-blue-500">
+                        <i class="fas fa-cloud-upload-alt text-5xl"></i>
+                    </div>
+                    <p class="text-lg font-medium text-gray-700">Drag & drop your Excel file here</p>
+                    <p class="text-gray-500">or click to browse files</p>
+                    <p class="text-sm text-gray-400">Supported formats: .xlsx, .xls</p>
+                </div>
+            </div>
+            <div id="fileName" class="mt-2 text-sm text-gray-600"></div>
+        </div>
+
+        <div id="progressContainer" class="hidden mb-6">
+            <div class="flex justify-between mb-1">
+                <span class="text-sm font-medium text-gray-700">Upload Progress</span>
+                <span id="progressText" class="text-sm font-medium text-gray-700">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div id="result" class="hidden mb-6 p-4 rounded-lg"></div>
+
+        <div class="flex justify-end space-x-4">
+            <button id="resetBtn" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Reset
+            </button>
+            <button id="uploadBtn" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fas fa-upload mr-2"></i>Upload Certificates
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('fileInput');
+            const fileName = document.getElementById('fileName');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const resultDiv = document.getElementById('result');
+            
+            let selectedFile = null;
+
+            // Handle drag and drop
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropzone.classList.add('dragover');
+            }
+
+            function unhighlight() {
+                dropzone.classList.remove('dragover');
+            }
+
+            // Handle dropped files
+            dropzone.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }
+
+            // Handle click to select file
+            dropzone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Handle file selection
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+
+            function handleFiles(files) {
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (isValidFileType(file)) {
+                        selectedFile = file;
+                        fileName.textContent = `Selected file: ${file.name}`;
+                        uploadBtn.disabled = false;
+                        resultDiv.classList.add('hidden');
+                    } else {
+                        showResult('Please select a valid Excel file (.xlsx, .xls)', 'error');
+                    }
+                }
+            }
+
+            function isValidFileType(file) {
+                const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+                return validTypes.includes(file.type) || 
+                       file.name.endsWith('.xlsx') || 
+                       file.name.endsWith('.xls');
+            }
+
+            // Handle upload
+            uploadBtn.addEventListener('click', async () => {
+                if (!selectedFile) return;
+
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                try {
+                    uploadBtn.disabled = true;
+                    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
+                    progressContainer.classList.remove('hidden');
+                    
+                    const xhr = new XMLHttpRequest();
+                    
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const percentComplete = Math.round((e.loaded / e.total) * 100);
+                            updateProgress(percentComplete);
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (xhr.status === 200) {
+                            const response = JSON.parse(xhr.responseText);
+                            showResult(
+                                `Successfully uploaded ${response.count} certificates!`,
+                                'success'
+                            );
+                        } else {
+                            const error = JSON.parse(xhr.responseText);
+                            showResult(
+                                error.message || 'Error uploading file. Please try again.',
+                                'error'
+                            );
+                        }
+                        resetForm();
+                    };
+
+                    xhr.onerror = () => {
+                        showResult('An error occurred during upload. Please try again.', 'error');
+                        resetForm();
+                    };
+
+                    xhr.open('POST', 'https://web-backend-0aiv.onrender.com/api/certificates/bulk-upload', true);
+                    xhr.send(formData);
+
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showResult('An error occurred. Please try again.', 'error');
+                    resetForm();
+                }
+            });
+
+            // Handle reset
+            resetBtn.addEventListener('click', resetForm);
+
+            function updateProgress(percent) {
+                progressBar.style.width = `${percent}%`;
+                progressText.textContent = `${percent}%`;
+            }
+
+            function showResult(message, type) {
+                resultDiv.textContent = message;
+                resultDiv.className = `p-4 rounded-lg ${
+                    type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                }`;
+                resultDiv.classList.remove('hidden');
+            }
+
+            function resetForm() {
+                fileInput.value = '';
+                selectedFile = null;
+                fileName.textContent = '';
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Certificates';
+                progressContainer.classList.add('hidden');
+                progressBar.style.width = '0%';
+                progressText.textContent = '0%';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -4,6 +4,12 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import verifyRoutes from './routes/verify.js';
 import programRoutes from './routes/programs.js';
+import certificateRoutes from './routes/certificate.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
@@ -33,9 +39,18 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// Routes
+// API Routes
 app.use('/api/verify', verifyRoutes);
 app.use('/api/programs', programRoutes);
+app.use('/api/certificates', certificateRoutes);
+
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve the bulk upload page
+app.get('/bulk-upload', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'bulk-upload.html'));
+});
 
 // Health check route
 app.get('/health', (req, res) => {
