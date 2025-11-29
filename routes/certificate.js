@@ -1,8 +1,10 @@
 import express from 'express';
-import Certificate from '../models/Certificate.js';
-import { body, validationResult } from 'express-validator';
 import multer from 'multer';
 import xlsx from 'xlsx';
+import { body, validationResult } from 'express-validator';
+import Certificate from '../models/Certificate.js';
+import fs from 'fs';
+import path from 'path';
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
@@ -168,8 +170,14 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
     // Execute bulk operation
     const result = await Certificate.bulkWrite(operations, { ordered: false });
     
-    // Delete the temporary file
-    fs.unlinkSync(req.file.path);
+    // Delete the temporary file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {
+        console.error('Error deleting temp file:', err);
+      }
+    }
     
     res.status(200).json({
       success: true,
@@ -188,7 +196,11 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
     
     // Delete the temporary file if it exists
     if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {
+        console.error('Error deleting temp file in error handler:', err);
+      }
     }
     
     // Handle bulk write errors specifically
