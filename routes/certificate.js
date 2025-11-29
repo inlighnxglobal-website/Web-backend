@@ -13,7 +13,32 @@ const parseExcel = (filePath) => {
     const workbook = xlsx.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    return xlsx.utils.sheet_to_json(worksheet);
+    
+    // Get all rows as JSON
+    const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    // Find the header row (first row with 'S. No.' in first column)
+    const headerRowIndex = data.findIndex(row => row[0] === 'S. No.');
+    if (headerRowIndex === -1) {
+      throw new Error('Could not find header row in Excel file');
+    }
+    
+    // Get headers (assuming they are in the row after the header row index)
+    const headers = data[headerRowIndex];
+    
+    // Get data rows (start from the row after headers)
+    const dataRows = data.slice(headerRowIndex + 1);
+    
+    // Convert to array of objects
+    return dataRows.map(row => {
+      const obj = {};
+      headers.forEach((header, index) => {
+        if (header) { // Only process columns with headers
+          obj[header.trim()] = row[index];
+        }
+      });
+      return obj;
+    });
   } catch (error) {
     console.error('Error parsing Excel file:', error);
     throw new Error('Error processing Excel file');
@@ -31,15 +56,22 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
     const data = parseExcel(req.file.path);
     
     // Transform data to match certificate schema
-    const certificates = data.map(item => ({
-      internId: item.internId?.toString().trim().toUpperCase(),
-      name: item.name?.toString().trim(),
-      domain: item.domain?.toString().trim(),
-      duration: Number(item.duration) || 0,
-      startingDate: item.startingDate,
-      completionDate: item.completionDate,
-      // Add other fields as per your schema
-    }));
+    const certificates = data.map(item => {
+      // Map the Excel columns to your schema
+      const certificate = {
+        internId: (item['Intern ID'] || '').toString().trim().toUpperCase(),
+        name: (item['Name of the Intern'] || '').toString().trim(),
+        domain: (item['Domain'] || '').toString().trim(),
+        duration: parseInt(item['Duration (in months)']) || 0,
+        startingDate: item['Start Date'] || null,
+        completionDate: item['End Date'] || null,
+        // Add other fields as needed
+      };
+      
+      // Log the mapping for debugging
+      console.log('Mapped certificate:', certificate);
+      return certificate;
+    });
 
     // Validate certificates
     for (const cert of certificates) {

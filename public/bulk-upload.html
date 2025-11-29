@@ -49,7 +49,7 @@
                     </div>
                     <p class="text-lg font-medium text-gray-700">Drag & drop your Excel file here</p>
                     <p class="text-gray-500">or click to browse files</p>
-                    <p class="text-sm text-gray-400">Supported formats: .xlsx, .xls</p>
+                    <p class="text-sm text-gray-400">Supported formats: .xlsx, .xls (with headers starting from row 8)</p>
                 </div>
             </div>
             <div id="fileName" class="mt-2 text-sm text-gray-600"></div>
@@ -179,17 +179,18 @@
                     };
 
                     xhr.onload = () => {
+                        const response = JSON.parse(xhr.responseText);
                         if (xhr.status === 200) {
-                            const response = JSON.parse(xhr.responseText);
                             showResult(
-                                `Successfully uploaded ${response.count} certificates!`,
-                                'success'
+                                `✅ Successfully uploaded ${response.count} certificates!`,
+                                'success',
+                                response.duplicates ? `Note: ${response.duplicates} duplicate entries were skipped.` : ''
                             );
                         } else {
-                            const error = JSON.parse(xhr.responseText);
                             showResult(
-                                error.message || 'Error uploading file. Please try again.',
-                                'error'
+                                '❌ ' + (response.message || 'Error uploading file. Please try again.'),
+                                'error',
+                                response.error || response.details || ''
                             );
                         }
                         resetForm();
@@ -218,8 +219,11 @@
                 progressText.textContent = `${percent}%`;
             }
 
-            function showResult(message, type) {
-                resultDiv.textContent = message;
+            function showResult(message, type, details = '') {
+                resultDiv.innerHTML = `
+                    <div class="font-medium">${message}</div>
+                    ${details ? `<div class="mt-2 text-sm">${details}</div>` : ''}
+                `;
                 resultDiv.className = `p-4 rounded-lg ${
                     type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                 }`;
