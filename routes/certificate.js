@@ -21,36 +21,20 @@ const parseExcel = (filePath) => {
     // Log first few rows for debugging
     console.log('First 5 rows of raw data:', JSON.stringify(data.slice(0, 5), null, 2));
     
-    // Find the header row - match exact format from screenshot
-    const headerRowIndex = data.findIndex(row => 
-      row && row.length >= 7 && // Ensure we have enough columns
-      String(row[0]).trim().toLowerCase() === 's. no.' &&
-      String(row[1]).trim().toLowerCase() === 'intern id' &&
-      String(row[2]).toLowerCase().includes('name of the intern')
-    );
+    // Find the header row - match the actual format from the logs
+    const headerRowIndex = 0; // First row contains headers in this format
     
-    console.log('Header row index:', headerRowIndex);
-
-    if (headerRowIndex === -1) {
-      console.error('Could not find header row. First column values:', data.slice(0, 5).map(r => r[0]));
-      throw new Error('Could not find header row in Excel file. Please ensure your file has headers like "S. No." in the first column.');
-    }
-    
-    // Define exact headers based on the screenshot
+    // Define headers based on the actual file structure
     const headers = [
-      'S. No.',
-      'Intern ID',
-      'Name of the Intern',
+      'Name',
       'Domain',
-      'Duration (in months)',
-      'Start Date',
-      'End Date',
-      'Email ID',
-      'Contact No.',
-      'Mentor Name',
-      'Mentor Email ID',
-      'Mentor Contact No.'
+      'Duration',
+      'Intern ID',
+      'Starting Date',
+      'Completion Date'
     ];
+    
+    console.log('Using headers from first row:', headers);
     
     console.log('Using predefined headers:', headers);
     
@@ -59,11 +43,11 @@ const parseExcel = (filePath) => {
     // Get data rows (start from the row after headers)
     let dataRows = [];
     
-    // Start from the row after headers and process until we hit an empty row
-    for (let i = headerRowIndex + 1; i < data.length; i++) {
+    // Start from the first data row (index 1 since index 0 is header)
+    for (let i = 1; i < data.length; i++) {
       const row = data[i];
       // Skip empty rows or rows where the first cell is empty
-      if (!row || !row[0]) break;
+      if (!row || !row[0]) continue;
       
       // Ensure the row has enough columns
       const paddedRow = [...row];
@@ -86,20 +70,21 @@ const parseExcel = (filePath) => {
           let value = row[index] !== undefined ? row[index] : '';
           
           // Format specific fields
-          if (header === 'S. No.') {
+          if (header === 'Duration') {
             value = parseInt(value) || 0;
-          } else if (header === 'Duration (in months)') {
-            value = parseInt(value) || 0;
-          } else if (header === 'Contact No.' || header === 'Mentor Contact No.') {
-            value = String(value).replace(/\D/g, ''); // Remove non-numeric characters
-          } else if (header === 'Email ID' || header === 'Mentor Email ID') {
-            value = String(value).toLowerCase().trim();
-          } else if (header === 'Name of the Intern' || header === 'Mentor Name') {
+          } else if (header === 'Starting Date' || header === 'Completion Date') {
+            // Convert Excel date number to JavaScript Date
+            value = value ? new Date((value - 25569) * 86400 * 1000) : null;
+          } else if (header === 'Name') {
             value = String(value || '').trim();
             // Convert to Title Case
             value = value.replace(/\w\S*/g, txt => 
               txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
             );
+          } else if (header === 'Intern ID') {
+            value = String(value || '').toUpperCase().trim();
+          } else {
+            value = String(value || '').trim();
           }
           
           obj[header] = value;
@@ -133,21 +118,14 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
         // Transform data to match certificate schema with flexible field mapping
     const certificates = data.map((item, index) => {
       try {
-        // Direct mapping based on exact header names
+        // Map the fields from the Excel to the certificate schema
         const certificate = {
-          internId: String(item['Intern ID'] || '').trim().toUpperCase(),
-          name: String(item['Name of the Intern'] || '').trim(),
-          domain: String(item['Domain'] || '').trim(),
-          duration: parseInt(item['Duration (in months)']) || 0,
-          startingDate: item['Start Date'] || null,
-          completionDate: item['End Date'] || null,
-          email: String(item['Email ID'] || '').toLowerCase().trim(),
-          contactNo: String(item['Contact No.'] || '').replace(/\D/g, ''),
-          mentor: {
-            name: String(item['Mentor Name'] || '').trim(),
-            email: String(item['Mentor Email ID'] || '').toLowerCase().trim(),
-            contactNo: String(item['Mentor Contact No.'] || '').replace(/\D/g, '')
-          }
+          internId: item['Intern ID'],
+          name: item['Name'],
+          domain: item['Domain'],
+          duration: item['Duration'],
+          startingDate: item['Starting Date'],
+          completionDate: item['Completion Date']
         };
         
         // Format dates if they exist
