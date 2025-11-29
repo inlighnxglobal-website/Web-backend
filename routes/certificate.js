@@ -156,27 +156,63 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
       }
     }
 
-    // Insert into database
-    const result = await Certificate.insertMany(certificates, { ordered: false });
+    // Use bulkWrite to handle duplicates by skipping them
+    const operations = certificates.map(cert => ({
+      updateOne: {
+        filter: { internId: cert.internId },
+        update: { $setOnInsert: cert },
+        upsert: true
+      }
+    }));
     
-    res.status(201).json({
+    // Execute bulk operation
+    const result = await Certificate.bulkWrite(operations, { ordered: false });
+    
+    // Delete the temporary file
+    fs.unlinkSync(req.file.path);
+    
+    res.status(200).json({
       success: true,
-      message: 'Certificates uploaded successfully',
-      count: result.length
+      insertedCount: result.upsertedCount,
+      modifiedCount: result.modifiedCount,
+      duplicates: result.writeErrors ? result.writeErrors.length : 0,
+      message: `Successfully processed ${certificates.length} certificates`,
+      details: {
+        inserted: result.upsertedCount,
+        duplicates: result.writeErrors ? result.writeErrors.length : 0
+      }
     });
 
   } catch (error) {
     console.error('Error in bulk upload:', error);
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: 'Duplicate internId found. Please ensure all internId values are unique.'
+    
+    // Delete the temporary file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    // Handle bulk write errors specifically
+    if (error.name === 'MongoBulkWriteError' && error.writeErrors) {
+      const duplicateCount = error.writeErrors.filter(e => e.code === 11000).length;
+      const otherErrors = error.writeErrors.filter(e => e.code !== 11000);
+      
+      return res.status(207).json({
+        success: true,
+        message: `Processed with ${duplicateCount} duplicates skipped`,
+        details: {
+          duplicates: duplicateCount,
+          otherErrors: otherErrors.length,
+          inserted: error.result?.nInserted || 0,
+          totalAttempted: error.result?.nMatched + error.result?.nUpserted + error.result?.nModified || 0
+        },
+        error: otherErrors.length > 0 ? otherErrors[0].errmsg : undefined
       });
     }
+    
     res.status(500).json({
       success: false,
-      message: 'Server error during bulk upload',
-      error: error.message
+      message: 'Error in bulk upload: ' + error.message,
+      error: error.stack
     });
   }
 });
