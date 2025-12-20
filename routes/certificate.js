@@ -3,6 +3,7 @@ import multer from 'multer';
 import xlsx from 'xlsx';
 import { body, validationResult } from 'express-validator';
 import Certificate from '../models/Certificate.js';
+import { protect } from '../middleware/auth.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -16,16 +17,16 @@ const parseExcel = (filePath) => {
     const workbook = xlsx.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    
+
     // Get all rows as JSON
     const data = xlsx.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-    
+
     // Log first few rows for debugging
     console.log('First 5 rows of raw data:', JSON.stringify(data.slice(0, 5), null, 2));
-    
+
     // Find the header row - match the actual format from the logs
     const headerRowIndex = 0; // First row contains headers in this format
-    
+
     // Define headers based on the actual file structure
     const headers = [
       'Name',
@@ -35,42 +36,42 @@ const parseExcel = (filePath) => {
       'Starting Date',
       'Completion Date'
     ];
-    
+
     console.log('Using headers from first row:', headers);
-    
+
     console.log('Using predefined headers:', headers);
-    
+
     console.log('Found headers:', headers);
-    
+
     // Get data rows (start from the row after headers)
     let dataRows = [];
-    
+
     // Start from the first data row (index 1 since index 0 is header)
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       // Skip empty rows or rows where the first cell is empty
       if (!row || !row[0]) continue;
-      
+
       // Ensure the row has enough columns
       const paddedRow = [...row];
       while (paddedRow.length < headers.length) {
         paddedRow.push('');
       }
-      
+
       dataRows.push(paddedRow);
     }
-    
+
     console.log(`Found ${dataRows.length} data rows`);
-    
+
     console.log(`Found ${dataRows.length} data rows after header`);
-    
+
     // Convert to array of objects with proper formatting
     const result = dataRows.map((row, rowIndex) => {
       const obj = {};
       headers.forEach((header, index) => {
         if (header) {
           let value = row[index] !== undefined ? row[index] : '';
-          
+
           // Format specific fields
           if (header === 'Duration') {
             value = parseInt(value) || 0;
@@ -80,7 +81,7 @@ const parseExcel = (filePath) => {
           } else if (header === 'Name') {
             value = String(value || '').trim();
             // Convert to Title Case
-            value = value.replace(/\w\S*/g, txt => 
+            value = value.replace(/\w\S*/g, txt =>
               txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
             );
           } else if (header === 'Intern ID') {
@@ -88,13 +89,13 @@ const parseExcel = (filePath) => {
           } else {
             value = String(value || '').trim();
           }
-          
+
           obj[header] = value;
         }
       });
       return obj;
     });
-    
+
     console.log('First parsed row:', JSON.stringify(result[0], null, 2));
     return result;
   } catch (error) {
@@ -108,7 +109,7 @@ const parseExcel = (filePath) => {
 };
 
 // Bulk upload certificates from Excel
-router.post('/bulk-upload', upload.single('file'), async (req, res) => {
+router.post('/bulk-upload', protect, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
@@ -116,8 +117,8 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
 
     // Parse the Excel file
     const data = parseExcel(req.file.path);
-    
-        // Transform data to match certificate schema with flexible field mapping
+
+    // Transform data to match certificate schema with flexible field mapping
     const certificates = data.map((item, index) => {
       try {
         // Map the fields from the Excel to the certificate schema
@@ -129,7 +130,7 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
           startingDate: item['Starting Date'],
           completionDate: item['Completion Date']
         };
-        
+
         // Format dates if they exist
         if (certificate.startingDate && certificate.startingDate instanceof Date === false) {
           certificate.startingDate = new Date(certificate.startingDate);
@@ -137,7 +138,7 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
         if (certificate.completionDate && certificate.completionDate instanceof Date === false) {
           certificate.completionDate = new Date(certificate.completionDate);
         }
-        
+
         console.log(`Mapped row ${index + 1}:`, certificate);
         return certificate;
       } catch (error) {
@@ -166,10 +167,10 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
         upsert: true
       }
     }));
-    
+
     // Execute bulk operation
     const result = await Certificate.bulkWrite(operations, { ordered: false });
-    
+
     // Delete the temporary file if it exists
     if (req.file && fs.existsSync(req.file.path)) {
       try {
@@ -178,7 +179,7 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
         console.error('Error deleting temp file:', err);
       }
     }
-    
+
     res.status(200).json({
       success: true,
       insertedCount: result.upsertedCount,
@@ -193,7 +194,7 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
 
   } catch (error) {
     console.error('Error in bulk upload:', error);
-    
+
     // Delete the temporary file if it exists
     if (req.file && fs.existsSync(req.file.path)) {
       try {
@@ -202,12 +203,12 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
         console.error('Error deleting temp file in error handler:', err);
       }
     }
-    
+
     // Handle bulk write errors specifically
     if (error.name === 'MongoBulkWriteError' && error.writeErrors) {
       const duplicateCount = error.writeErrors.filter(e => e.code === 11000).length;
       const otherErrors = error.writeErrors.filter(e => e.code !== 11000);
-      
+
       return res.status(207).json({
         success: true,
         message: `Processed with ${duplicateCount} duplicates skipped`,
@@ -220,7 +221,7 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
         error: otherErrors.length > 0 ? otherErrors[0].errmsg : undefined
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Error in bulk upload: ' + error.message,

@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import verifyRoutes from './routes/verify.js';
 import programRoutes from './routes/programs.js';
 import certificateRoutes from './routes/certificate.js';
+import authRoutes from './routes/auth.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -43,6 +44,7 @@ app.use((err, req, res, next) => {
 app.use('/api/verify', verifyRoutes);
 app.use('/api/programs', programRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/auth', authRoutes);
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -65,10 +67,10 @@ app.use((req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
-  
+
   // Don't send error details in production
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
+
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Something went wrong!',

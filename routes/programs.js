@@ -1,12 +1,13 @@
 import express from 'express';
 import Program from '../models/Program.js';
+import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Helper function to validate program data
 const validateProgram = (data) => {
   const errors = [];
-  
+
   if (!data.title || data.title.trim() === '') {
     errors.push('Title is required');
   }
@@ -16,9 +17,9 @@ const validateProgram = (data) => {
   if (!data.category || data.category.trim() === '') {
     errors.push('Category is required');
   } else if (![
-    'Business', 
-    'Development', 
-    'Cybersecurity', 
+    'Business',
+    'Development',
+    'Cybersecurity',
     'Data Science',
     'Business & Analytics',
     'Cyber Security',
@@ -90,13 +91,13 @@ router.get('/', async (req, res) => {
 router.get('/by-name/:name', async (req, res) => {
   try {
     const { name } = req.params;
-    
+
     // Decode URL-encoded name and replace hyphens/dashes with spaces for better matching
     let decodedName = decodeURIComponent(name)
       .replace(/-/g, ' ')
       .replace(/_/g, ' ')
       .trim();
-    
+
     // Normalize the search term: handle abbreviations and compound words
     // e.g., "ai ml" should match "AI & Machine Learning"
     // e.g., "frontend" should match "Front-End" or "Front End"
@@ -110,31 +111,31 @@ router.get('/by-name/:name', async (req, res) => {
         'fullstack': '(full.?stack|fullstack)',
         'full-stack': '(full.?stack|fullstack)',
       };
-      
+
       const lowerWord = word.toLowerCase();
       if (mappings[lowerWord]) {
         return mappings[lowerWord];
       }
       return word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     };
-    
+
     // First try: match by detailsLink (most reliable - exact match)
     let program = await Program.findOne({
       detailsLink: `/programs/${name}`
     }).select('-__v');
-    
+
     // Second try: if not found, try title matching with flexible regex
     if (!program) {
       const words = decodedName.split(/\s+/).filter(w => w.length > 0);
-      
+
       if (words.length > 0) {
         // Create regex pattern that matches all words (in any order, with flexible spacing)
         const regexPattern = words.map(normalizeWord).join('.*');
-        
+
         program = await Program.findOne({
           title: { $regex: new RegExp(regexPattern, 'i') }
         }).select('-__v');
-        
+
         // Third try: if still not found, try matching each word individually (more flexible)
         if (!program) {
           // Create a pattern that requires all words to be present (in any order)
@@ -142,7 +143,7 @@ router.get('/by-name/:name', async (req, res) => {
             const normalized = normalizeWord(w);
             return `(?=.*${normalized})`;
           }).join('');
-          
+
           program = await Program.findOne({
             title: { $regex: new RegExp(allWordsPattern, 'i') }
           }).select('-__v');
@@ -175,29 +176,29 @@ router.get('/by-name/:name', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check if it's a valid MongoDB ObjectId
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
-    
+
     let program;
     if (isObjectId) {
       // Try to find by ID first
       program = await Program.findById(id).select('-__v');
     }
-    
+
     // If not found by ID, try searching by title (for backward compatibility)
     if (!program) {
       const decodedName = decodeURIComponent(id)
         .replace(/-/g, ' ')
         .replace(/_/g, ' ')
         .trim();
-      
+
       // Create a more flexible regex pattern that matches words in any order
       const words = decodedName.split(/\s+/).filter(w => w.length > 0);
-      const regexPattern = words.map(word => 
+      const regexPattern = words.map(word =>
         word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       ).join('.*');
-      
+
       program = await Program.findOne({
         title: { $regex: new RegExp(regexPattern, 'i') }
       }).select('-__v');
@@ -231,7 +232,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/programs - Add a new program
-router.post('/', async (req, res) => {
+router.post('/', protect, async (req, res) => {
   try {
     // Check if request body exists
     if (!req.body || Object.keys(req.body).length === 0) {
@@ -327,22 +328,70 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT /api/programs/:id - Update a program
+router.put('/:id', protect, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if request body exists
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request body is empty. Please provide data to update.'
+      });
+    }
+
+    // Find and update program
+    const program = await Program.findByIdAndUpdate(
+      id,
+      { $set: req.body },
+      { new: true, runValidators: true }
+    );
+
+    if (!program) {
+      return res.status(404).json({
+        success: false,
+        message: 'Program not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Program updated successfully',
+      data: program
+    });
+  } catch (error) {
+    console.error('Error updating program:', error);
+    if (error.kind === 'ObjectId') {
+      return res.status(404).json({
+        success: false,
+        message: 'Program not found'
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating the program',
+      error: error.message
+    });
+  }
+});
+
 // DELETE /api/programs?all=true - Delete all programs
-router.delete('/', async (req, res) => {
+router.delete('/', protect, async (req, res) => {
   try {
     const { all } = req.query;
-    
+
     // Only delete all if explicitly requested with ?all=true
     if (all === 'true') {
       const result = await Program.deleteMany({});
-      
+
       return res.json({
         success: true,
         message: `Successfully deleted ${result.deletedCount} program(s)`,
         deletedCount: result.deletedCount
       });
     }
-    
+
     // If no query parameter, return error
     return res.status(400).json({
       success: false,
@@ -359,10 +408,10 @@ router.delete('/', async (req, res) => {
 });
 
 // DELETE /api/programs/:id - Delete a program
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', protect, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const program = await Program.findByIdAndDelete(id);
 
     if (!program) {

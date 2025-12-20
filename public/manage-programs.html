@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Program Manager - Inlighnx</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+
+        body.modal-active {
+            overflow-x: hidden;
+            overflow-y: hidden !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Login Section -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Admin Login</h2>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                    <input type="email" id="email"
+                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                        required>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                    <input type="password" id="password"
+                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                        required>
+                </div>
+                <div id="loginError" class="text-red-500 text-sm hidden"></div>
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition duration-300">
+                    Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboardSection" class="hidden">
+        <!-- Navbar -->
+        <nav class="bg-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-bold text-gray-800">Inlighnx Program Manager</h1>
+                    </div>
+                    <div class="flex items-center">
+                        <button id="logoutBtn" class="text-red-600 hover:text-red-800 font-medium">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-700">Programs</h2>
+                <button onclick="openModal()"
+                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    <i class="fas fa-plus mr-2"></i> Add Program
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingPrograms" class="text-center py-10 hidden">
+                <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
+                <p class="mt-2 text-gray-600">Loading programs...</p>
+            </div>
+
+            <!-- Programs Grid -->
+            <div id="programsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Program Cards will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="programModal"
+        class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+
+        <div
+            class="modal-container bg-white w-11/12 md:max-w-4xl mx-auto rounded shadow-lg z-50 overflow-y-auto max-h-[90vh]">
+            <div class="modal-content py-4 text-left px-6">
+                <!-- Title -->
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <p class="text-2xl font-bold" id="modalTitle">Add Program</p>
+                    <div class="modal-close cursor-pointer z-50" onclick="closeModal()">
+                        <i class="fas fa-times"></i>
+                    </div>
+                </div>
+
+                <!-- Form -->
+                <form id="programForm" class="mt-4 space-y-4">
+                    <input type="hidden" id="programId">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Title *</label>
+                            <input type="text" id="title"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
+                                required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Category *</label>
+                            <select id="category"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
+                                required>
+                                <option value="Development">Development</option>
+                                <option value="Business">Business</option>
+                                <option value="Cybersecurity">Cybersecurity</option>
+                                <option value="Data Science">Data Science</option>
+                                <option value="Business & Analytics">Business & Analytics</option>
+                                <option value="Cyber Security">Cyber Security</option>
+                                <option value="AI & Machine Learning">AI & Machine Learning</option>
+                                <option value="Data & Analytics">Data & Analytics</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Level *</label>
+                            <select id="level"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
+                                required>
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                                <option value="Beginner to Intermediate">Beginner to Intermediate</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Duration *</label>
+                            <input type="text" id="duration"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
+                                placeholder="e.g. 3 months" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Rating (0-5)</label>
+                            <input type="number" id="rating" step="0.1" min="0" max="5"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
+                                value="5">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Status</label>
+                            <select id="status"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Short Summary *</label>
+                        <textarea id="summary"
+                            class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500 h-20"
+                            required></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Overview</label>
+                        <textarea id="overview"
+                            class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500 h-24"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Detailed Summary</label>
+                        <textarea id="detailedSummary"
+                            class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500 h-32"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Original Price</label>
+                            <input type="number" id="originalPrice"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Discounted Price</label>
+                            <input type="number" id="discountedPrice"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Modules Count</label>
+                            <input type="number" id="modules"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Hours</label>
+                            <input type="number" id="hours"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Skills (comma separated)</label>
+                        <input type="text" id="skills"
+                            class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
+                            placeholder="React, Node.js, MongoDB">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Course Topics (comma
+                            separated)</label>
+                        <textarea id="courseTopics"
+                            class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500 h-20"
+                            placeholder="Topic 1, Topic 2, Topic 3"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Thumbnail URL</label>
+                            <input type="url" id="thumbnail"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Certificate Image URL</label>
+                            <input type="url" id="certificateImage"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Details Link</label>
+                            <input type="text" id="detailsLink"
+                                class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-4 border-t space-x-3">
+                        <button type="button" onclick="closeModal()"
+                            class="bg-transparent hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 border border-gray-300 rounded">
+                            Cancel
+                        </button>
+                        <button type="submit" id="saveBtn"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Save Program
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        // Element References
+        const loginSection = document.getElementById('loginSection');
+        const dashboardSection = document.getElementById('dashboardSection');
+        const loginForm = document.getElementById('loginForm');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const programsGrid = document.getElementById('programsGrid');
+        const modal = document.getElementById('programModal');
+        const programForm = document.getElementById('programForm');
+        const loadingPrograms = document.getElementById('loadingPrograms');
+
+        // State
+        let token = localStorage.getItem('adminToken');
+
+        // Init
+        checkAuth();
+
+        // Auth Logic
+        function checkAuth() {
+            if (token) {
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            loginSection.classList.remove('hidden');
+            dashboardSection.classList.add('hidden');
+        }
+
+        function showDashboard() {
+            loginSection.classList.add('hidden');
+            dashboardSection.classList.remove('hidden');
+            fetchPrograms();
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    token = data.token;
+                    localStorage.setItem('adminToken', token);
+                    errorDiv.classList.add('hidden');
+                    showDashboard();
+                } else {
+                    errorDiv.textContent = data.message || 'Login failed';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Server error. Please try again.';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            token = null;
+            localStorage.removeItem('adminToken');
+            showLogin();
+        });
+
+        // CRUD Logic
+        async function fetchPrograms() {
+            loadingPrograms.classList.remove('hidden');
+            programsGrid.innerHTML = '';
+
+            try {
+                const res = await fetch(`${API_URL}/programs`);
+                const data = await res.json();
+
+                if (data.success) {
+                    renderPrograms(data.data);
+                }
+            } catch (error) {
+                console.error('Error fetching programs:', error);
+                programsGrid.innerHTML = '<p class="text-red-500 col-span-3 text-center">Failed to load programs.</p>';
+            } finally {
+                loadingPrograms.classList.add('hidden');
+            }
+        }
+
+        function renderPrograms(programs) {
+            programsGrid.innerHTML = programs.map(p => `
+                <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+                    <img src="${p.thumbnail || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                         class="w-full h-48 object-cover" alt="${p.title}">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">${p.category}</span>
+                            <span class="text-sm text-gray-500">${p.level}</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-gray-800">${p.title}</h3>
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">${p.summary}</p>
+                        <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
+                            <span class="font-bold text-lg">₹${p.discountedPrice || 0}</span>
+                            <div class="space-x-2">
+                                <button onclick='openModal("${p._id}")' class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick='deleteProgram("${p._id}")' class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.openModal = (id = null) => {
+            document.getElementById('modalTitle').textContent = id ? 'Edit Program' : 'Add Program';
+            document.getElementById('programId').value = id || '';
+
+            if (id) {
+                // Fetch details for edit (or find in existing list if stored)
+                // For simplicity, fetching single
+                fetch(`${API_URL}/programs/${id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) fillForm(data.data);
+                    });
+            } else {
+                programForm.reset();
+            }
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            document.body.classList.add('modal-active');
+        };
+
+        window.closeModal = () => {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            document.body.classList.remove('modal-active');
+        };
+
+        function fillForm(p) {
+            document.getElementById('title').value = p.title || '';
+            document.getElementById('category').value = p.category || 'Development';
+            document.getElementById('level').value = p.level || 'Beginner';
+            document.getElementById('duration').value = p.duration || '';
+            document.getElementById('rating').value = p.rating || 5;
+            document.getElementById('summary').value = p.summary || '';
+            document.getElementById('overview').value = p.overview || '';
+            document.getElementById('detailedSummary').value = p.detailedSummary || '';
+            document.getElementById('originalPrice').value = p.originalPrice || '';
+            document.getElementById('discountedPrice').value = p.discountedPrice || '';
+            document.getElementById('modules').value = p.modules || '';
+            document.getElementById('hours').value = p.hours || '';
+            document.getElementById('skills').value = (p.skills || []).join(', ');
+            document.getElementById('courseTopics').value = (p.courseTopics || []).join(', ');
+            document.getElementById('thumbnail').value = p.thumbnail || '';
+            document.getElementById('certificateImage').value = p.certificateImage || '';
+            document.getElementById('detailsLink').value = p.detailsLink || '';
+            document.getElementById('status').value = p.status || 'active';
+        }
+
+        programForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('programId').value;
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}/programs/${id}` : `${API_URL}/programs`;
+
+            const formData = {
+                title: document.getElementById('title').value,
+                category: document.getElementById('category').value,
+                level: document.getElementById('level').value,
+                duration: document.getElementById('duration').value,
+                rating: Number(document.getElementById('rating').value),
+                summary: document.getElementById('summary').value,
+                overview: document.getElementById('overview').value,
+                detailedSummary: document.getElementById('detailedSummary').value,
+                originalPrice: document.getElementById('originalPrice').value,
+                discountedPrice: document.getElementById('discountedPrice').value,
+                modules: document.getElementById('modules').value,
+                hours: document.getElementById('hours').value,
+                skills: document.getElementById('skills').value.split(',').map(s => s.trim()).filter(Boolean),
+                courseTopics: document.getElementById('courseTopics').value.split(',').map(s => s.trim()).filter(Boolean),
+                thumbnail: document.getElementById('thumbnail').value,
+                certificateImage: document.getElementById('certificateImage').value,
+                detailsLink: document.getElementById('detailsLink').value,
+                status: document.getElementById('status').value,
+            };
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    closeModal();
+                    fetchPrograms();
+                    alert(id ? 'Program updated!' : 'Program added!');
+                } else {
+                    alert(data.message || 'Operation failed');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('An error occurred');
+            }
+        });
+
+        window.deleteProgram = async (id) => {
+            if (!confirm('Are you sure you want to delete this program?')) return;
+
+            try {
+                const res = await fetch(`${API_URL}/programs/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    fetchPrograms();
+                } else {
+                    alert('Failed to delete');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error deleting program');
+            }
+        };
+    </script>
+</body>
+
+</html>
