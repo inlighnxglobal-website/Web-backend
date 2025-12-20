@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,15 +13,18 @@
             border-radius: 0.5rem;
             transition: all 0.3s ease;
         }
+
         .dropzone.dragover {
             border-color: #4299e1;
             background-color: #ebf8ff;
         }
+
         .progress-bar {
             transition: width 0.6s ease;
         }
     </style>
 </head>
+
 <body class="bg-gray-100 min-h-screen p-6">
     <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
         <div class="text-center mb-8">
@@ -32,7 +36,8 @@
             <h2 class="text-xl font-semibold mb-4">Instructions</h2>
             <div class="bg-blue-50 p-4 rounded-lg mb-6">
                 <ol class="list-decimal list-inside space-y-2 text-gray-700">
-                    <li>Download the <a href="/templates/certificate-template.xlsx" class="text-blue-600 hover:underline font-medium">Excel template</a></li>
+                    <li>Download the <a href="/templates/certificate-template.xlsx"
+                            class="text-blue-600 hover:underline font-medium">Excel template</a></li>
                     <li>Fill in the certificate details following the template format</li>
                     <li>Save the file and upload it using the form below</li>
                     <li>Click 'Upload Certificates' to process the file</li>
@@ -49,7 +54,8 @@
                     </div>
                     <p class="text-lg font-medium text-gray-700">Drag & drop your Excel file here</p>
                     <p class="text-gray-500">or click to browse files</p>
-                    <p class="text-sm text-gray-400">Supported formats: .xlsx, .xls (with headers starting from row 8)</p>
+                    <p class="text-sm text-gray-400">Supported formats: .xlsx, .xls (with headers starting from row 8)
+                    </p>
                 </div>
             </div>
             <div id="fileName" class="mt-2 text-sm text-gray-600"></div>
@@ -68,10 +74,13 @@
         <div id="result" class="hidden mb-6 p-4 rounded-lg"></div>
 
         <div class="flex justify-end space-x-4">
-            <button id="resetBtn" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <button id="resetBtn"
+                class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 Reset
             </button>
-            <button id="uploadBtn" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+            <button id="uploadBtn"
+                class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled>
                 <i class="fas fa-upload mr-2"></i>Upload Certificates
             </button>
         </div>
@@ -88,7 +97,7 @@
             const progressBar = document.getElementById('progressBar');
             const progressText = document.getElementById('progressText');
             const resultDiv = document.getElementById('result');
-            
+
             let selectedFile = null;
 
             // Handle drag and drop
@@ -119,7 +128,7 @@
 
             // Handle dropped files
             dropzone.addEventListener('drop', handleDrop, false);
-            
+
             function handleDrop(e) {
                 const dt = e.dataTransfer;
                 const files = dt.files;
@@ -152,9 +161,9 @@
 
             function isValidFileType(file) {
                 const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
-                return validTypes.includes(file.type) || 
-                       file.name.endsWith('.xlsx') || 
-                       file.name.endsWith('.xls');
+                return validTypes.includes(file.type) ||
+                    file.name.endsWith('.xlsx') ||
+                    file.name.endsWith('.xls');
             }
 
             // Handle upload
@@ -168,9 +177,9 @@
                     uploadBtn.disabled = true;
                     uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
                     progressContainer.classList.remove('hidden');
-                    
+
                     const xhr = new XMLHttpRequest();
-                    
+
                     xhr.upload.onprogress = (e) => {
                         if (e.lengthComputable) {
                             const percentComplete = Math.round((e.loaded / e.total) * 100);
@@ -201,7 +210,7 @@
                         resetForm();
                     };
 
-                    xhr.open('POST', 'https://web-backend-0aiv.onrender.com/api/certificates/bulk-upload', true);
+                    xhr.open('POST', '/api/certificates/bulk-upload', true);
                     xhr.send(formData);
 
                 } catch (error) {
@@ -224,9 +233,8 @@
                     <div class="font-medium">${message}</div>
                     ${details ? `<div class="mt-2 text-sm">${details}</div>` : ''}
                 `;
-                resultDiv.className = `p-4 rounded-lg ${
-                    type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                }`;
+                resultDiv.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                    }`;
                 resultDiv.classList.remove('hidden');
             }
 
@@ -243,4 +251,5 @@
         });
     </script>
 </body>
+
 </html>
