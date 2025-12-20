@@ -212,6 +212,13 @@
                     </div>
 
                     <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Technologies (comma separated)</label>
+                        <input type="text" id="technologies"
+                            class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
+                            placeholder="Python, TensorFlow, Pandas">
+                    </div>
+
+                    <div>
                         <label class="block text-gray-700 text-sm font-bold mb-2">Course Topics (comma
                             separated)</label>
                         <textarea id="courseTopics"
@@ -414,6 +421,7 @@
             document.getElementById('modules').value = p.modules || '';
             document.getElementById('hours').value = p.hours || '';
             document.getElementById('skills').value = (p.skills || []).join(', ');
+            document.getElementById('technologies').value = (p.technologies || []).join(', ');
             document.getElementById('courseTopics').value = (p.courseTopics || []).join(', ');
             document.getElementById('thumbnail').value = p.thumbnail || '';
             document.getElementById('certificateImage').value = p.certificateImage || '';
@@ -441,6 +449,7 @@
                 modules: document.getElementById('modules').value,
                 hours: document.getElementById('hours').value,
                 skills: document.getElementById('skills').value.split(',').map(s => s.trim()).filter(Boolean),
+                technologies: document.getElementById('technologies').value.split(',').map(s => s.trim()).filter(Boolean),
                 courseTopics: document.getElementById('courseTopics').value.split(',').map(s => s.trim()).filter(Boolean),
                 thumbnail: document.getElementById('thumbnail').value,
                 certificateImage: document.getElementById('certificateImage').value,
