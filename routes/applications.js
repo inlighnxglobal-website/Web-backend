@@ -73,4 +73,34 @@ router.post('/', async (req, res) => {
     }
 });
 
+// @route   DELETE /api/applications/:id
+// @desc    Delete an application
+// @access  Private
+router.delete('/:id', protect, async (req, res) => {
+    try {
+        const application = await Application.findById(req.params.id);
+
+        if (!application) {
+            return res.status(404).json({
+                success: false,
+                message: 'Application not found'
+            });
+        }
+
+        await application.deleteOne();
+
+        res.json({
+            success: true,
+            message: 'Application removed'
+        });
+    } catch (error) {
+        console.error('Error deleting application:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message
+        });
+    }
+});
+
 export default router;

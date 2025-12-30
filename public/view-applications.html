@@ -97,6 +97,9 @@
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Role</th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200" id="tableBody">
@@ -245,6 +248,11 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         ${app.internshipType ? app.internshipType.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'N/A'}
                     </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="deleteApplication('${app._id}')" class="text-red-600 hover:text-red-900 transition duration-300">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                    </td>
                 </tr>
             `).join('');
         }
@@ -273,6 +281,36 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Applications");
             XLSX.writeFile(wb, "Inlighnx_Applications.xlsx");
+        }
+
+        async function deleteApplication(id) {
+            if (!confirm('Are you sure you want to delete this application? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/applications/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    // Remove from local data array to avoid fetching again strictly necessary but good UX
+                    applicationsData = applicationsData.filter(app => app._id !== id);
+                    renderApplications(applicationsData);
+                    applicationCount.textContent = `${applicationsData.length} Applications`;
+                    alert('Application deleted successfully.');
+                } else {
+                    alert(data.message || 'Failed to delete application.');
+                }
+            } catch (error) {
+                console.error('Error deleting application:', error);
+                alert('An error occurred while deleting.');
+            }
         }
     </script>
 </body>
