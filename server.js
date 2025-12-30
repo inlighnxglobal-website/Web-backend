@@ -6,6 +6,7 @@ import verifyRoutes from './routes/verify.js';
 import programRoutes from './routes/programs.js';
 import certificateRoutes from './routes/certificate.js';
 import authRoutes from './routes/auth.js';
+import applicationRoutes from './routes/applications.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -45,6 +46,7 @@ app.use('/api/verify', verifyRoutes);
 app.use('/api/programs', programRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -57,6 +59,11 @@ app.get('/bulk-upload', (req, res) => {
 // Health check route
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
+});
+
+// Serve admin applications view
+app.get('/view-applications', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'view-applications.html'));
 });
 
 // 404 handler
