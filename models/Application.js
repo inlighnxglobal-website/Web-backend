@@ -17,10 +17,6 @@ const applicationSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    address: {
-        type: String,
-        required: true
-    },
     userType: {
         type: String,
         required: true,
