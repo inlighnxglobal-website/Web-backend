@@ -19,7 +19,7 @@ const certificateSchema = new mongoose.Schema({
     trim: true
   },
   duration: {
-    type: Number,
+    type: mongoose.Schema.Types.Mixed,
     required: true
   },
   startingDate: {

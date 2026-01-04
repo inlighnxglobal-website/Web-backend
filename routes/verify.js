@@ -7,7 +7,7 @@ const router = express.Router();
 const parseDate = (dateStr) => {
   if (!dateStr) return null;
   if (typeof dateStr !== 'string') return new Date(dateStr);
-  
+
   if (dateStr.includes('-')) {
     const parts = dateStr.split('-');
     if (parts[0].length === 2) {
@@ -45,7 +45,7 @@ const extractCertificateData = (item) => {
 // Helper function to validate certificate data
 const validateCertificate = (data) => {
   const errors = [];
-  
+
   if (!data.internId || data.internId.trim() === '') {
     errors.push('Intern ID is required');
   }
@@ -116,8 +116,8 @@ router.post('/', async (req, res) => {
     }
 
     // Check if certificate already exists
-    const existing = await Certificate.findOne({ 
-      internId: data.internId.trim().toUpperCase() 
+    const existing = await Certificate.findOne({
+      internId: data.internId.trim().toUpperCase()
     });
     if (existing) {
       return res.status(409).json({
@@ -129,12 +129,12 @@ router.post('/', async (req, res) => {
     // Helper function to normalize date - keep DD-MM-YYYY format as string
     const normalizeDate = (dateStr) => {
       if (!dateStr) return null;
-      
+
       // If already in DD-MM-YYYY format, return as string
       if (typeof dateStr === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(dateStr.trim())) {
         return dateStr.trim();
       }
-      
+
       // Otherwise, parse and convert to DD-MM-YYYY string format
       const parsed = parseDate(dateStr);
       if (parsed && !isNaN(parsed.getTime())) {
@@ -143,7 +143,7 @@ router.post('/', async (req, res) => {
         const year = parsed.getFullYear();
         return `${day}-${month}-${year}`;
       }
-      
+
       return dateStr;
     };
 
@@ -152,7 +152,7 @@ router.post('/', async (req, res) => {
       internId: data.internId.trim().toUpperCase(),
       name: data.name.trim(),
       domain: data.domain.trim(),
-      duration: Number(data.duration),
+      duration: data.duration,
       startingDate: normalizeDate(data.startingDate),
       completionDate: normalizeDate(data.completionDate),
       email: data.email ? data.email.trim().toLowerCase() : undefined,
@@ -263,8 +263,8 @@ router.post('/bulk', async (req, res) => {
         }
 
         // Check if certificate already exists
-        const existing = await Certificate.findOne({ 
-          internId: data.internId.trim().toUpperCase() 
+        const existing = await Certificate.findOne({
+          internId: data.internId.trim().toUpperCase()
         });
 
         if (existing) {
@@ -279,12 +279,12 @@ router.post('/bulk', async (req, res) => {
         // Helper function to normalize date - keep DD-MM-YYYY format as string
         const normalizeDate = (dateStr) => {
           if (!dateStr) return null;
-          
+
           // If already in DD-MM-YYYY format, return as string
           if (typeof dateStr === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(dateStr.trim())) {
             return dateStr.trim();
           }
-          
+
           // Otherwise, parse and convert to DD-MM-YYYY string format
           const parsed = parseDate(dateStr);
           if (parsed && !isNaN(parsed.getTime())) {
@@ -293,7 +293,7 @@ router.post('/bulk', async (req, res) => {
             const year = parsed.getFullYear();
             return `${day}-${month}-${year}`;
           }
-          
+
           return dateStr;
         };
 
@@ -302,7 +302,7 @@ router.post('/bulk', async (req, res) => {
           internId: data.internId.trim().toUpperCase(),
           name: data.name.trim(),
           domain: data.domain.trim(),
-          duration: Number(data.duration),
+          duration: data.duration,
           startingDate: normalizeDate(data.startingDate),
           completionDate: normalizeDate(data.completionDate),
           email: data.email ? data.email.trim().toLowerCase() : undefined,
@@ -449,7 +449,7 @@ router.get('/', async (req, res) => {
 router.get('/:internId', async (req, res) => {
   try {
     const { internId } = req.params;
-    
+
     if (!internId || internId.trim() === '') {
       return res.status(400).json({
         valid: false,
@@ -484,7 +484,7 @@ router.get('/:internId', async (req, res) => {
       if (typeof date === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(date)) {
         return date;
       }
-      
+
       // If it's a Date object, format it
       if (date instanceof Date) {
         const day = String(date.getDate()).padStart(2, '0');
@@ -492,7 +492,7 @@ router.get('/:internId', async (req, res) => {
         const year = date.getFullYear();
         return `${day}-${month}-${year}`;
       }
-      
+
       // Try to parse as Date and format
       const d = new Date(date);
       if (isNaN(d.getTime())) {
@@ -528,7 +528,7 @@ router.get('/:internId', async (req, res) => {
 router.put('/:internId', async (req, res) => {
   try {
     const { internId } = req.params;
-    
+
     if (!internId || internId.trim() === '') {
       return res.status(400).json({
         success: false,
@@ -550,11 +550,11 @@ router.put('/:internId', async (req, res) => {
     // Helper function to normalize date - keep DD-MM-YYYY format as string
     const normalizeDate = (dateStr) => {
       if (!dateStr) return null;
-      
+
       if (typeof dateStr === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(dateStr.trim())) {
         return dateStr.trim();
       }
-      
+
       const parsed = parseDate(dateStr);
       if (parsed && !isNaN(parsed.getTime())) {
         const day = String(parsed.getDate()).padStart(2, '0');
@@ -562,7 +562,7 @@ router.put('/:internId', async (req, res) => {
         const year = parsed.getFullYear();
         return `${day}-${month}-${year}`;
       }
-      
+
       return dateStr;
     };
 
@@ -574,13 +574,13 @@ router.put('/:internId', async (req, res) => {
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined || updateData[field] !== undefined) {
         const value = req.body[field] !== undefined ? req.body[field] : updateData[field];
-        
+
         if (field === 'email') {
           updates[field] = value ? value.trim().toLowerCase() : undefined;
         } else if (field === 'startingDate' || field === 'completionDate') {
           updates[field] = normalizeDate(value);
         } else if (field === 'duration') {
-          updates[field] = Number(value);
+          updates[field] = value;
         } else if (field === 'status') {
           if (['active', 'revoked'].includes(value)) {
             updates[field] = value;
@@ -665,7 +665,7 @@ router.put('/:internId', async (req, res) => {
 router.delete('/:internId', async (req, res) => {
   try {
     const { internId } = req.params;
-    
+
     if (!internId || internId.trim() === '') {
       return res.status(400).json({
         success: false,
