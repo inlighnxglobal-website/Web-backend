@@ -394,7 +394,8 @@ router.get('/', async (req, res) => {
 
     const certificates = await Certificate.find(query)
       .sort({ createdAt: -1 })
-      .select('-__v');
+      .select('-__v')
+      .lean();
 
     // Helper function to format date as DD-MM-YYYY
     const formatDate = (date) => {
@@ -418,13 +419,13 @@ router.get('/', async (req, res) => {
     };
 
     const formattedCertificates = certificates.map(cert => ({
-      internId: cert.internId,
-      name: cert.name,
-      domain: cert.domain,
-      duration: cert.duration,
-      startingDate: formatDate(cert.startingDate),
-      completionDate: formatDate(cert.completionDate),
-      email: cert.email,
+      internId: cert.internId || cert["Intern ID"] || cert["internId"],
+      name: cert.name || cert["Name"],
+      domain: cert.domain || cert["Domain"],
+      duration: cert.duration || cert["Duration"],
+      startingDate: formatDate(cert.startingDate || cert["Starting Date"]),
+      completionDate: formatDate(cert.completionDate || cert["Completion Date"]),
+      email: cert.email || cert["Email"],
       status: cert.status,
       createdAt: cert.createdAt,
       updatedAt: cert.updatedAt
@@ -458,9 +459,10 @@ router.get('/:internId', async (req, res) => {
     }
 
     // Find certificate by internId (case-insensitive)
+    // Use .lean() to get raw object to handle records with unconventional key naming (e.g., capitalized keys)
     const certificate = await Certificate.findOne({
       internId: internId.trim().toUpperCase()
-    });
+    }).lean();
 
     if (!certificate) {
       return res.status(404).json({
@@ -506,14 +508,15 @@ router.get('/:internId', async (req, res) => {
     };
 
     // Return certificate details with exact field names matching MongoDB format
+    // Fallback to capitalized keys if lowercase schema keys are missing
     res.json({
       valid: true,
-      "Name": certificate.name,
-      "Domain": certificate.domain,
-      "Duration": certificate.duration,
-      "Intern ID": certificate.internId,
-      "Starting Date": formatDate(certificate.startingDate),
-      "Completion Date": formatDate(certificate.completionDate)
+      "Name": certificate.name || certificate["Name"],
+      "Domain": certificate.domain || certificate["Domain"],
+      "Duration": certificate.duration || certificate["Duration"],
+      "Intern ID": certificate.internId || certificate["Intern ID"] || certificate["internId"],
+      "Starting Date": formatDate(certificate.startingDate || certificate["Starting Date"]),
+      "Completion Date": formatDate(certificate.completionDate || certificate["Completion Date"])
     });
   } catch (error) {
     console.error('Verification error:', error);
