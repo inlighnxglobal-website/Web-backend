@@ -7,6 +7,7 @@ import programRoutes from './routes/programs.js';
 import certificateRoutes from './routes/certificate.js';
 import authRoutes from './routes/auth.js';
 import applicationRoutes from './routes/applications.js';
+import schoolApplicationRoutes from './routes/schoolApplications.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -47,6 +48,7 @@ app.use('/api/programs', programRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/school-applications', schoolApplicationRoutes);
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -61,9 +63,19 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
+// Serve programs manager view
+app.get('/manage-programs', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'manage-programs.html'));
+});
+
 // Serve admin applications view
 app.get('/view-applications', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'view-applications.html'));
+});
+
+// Serve school applications view
+app.get('/view-school-applications', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'view-school-applications.html'));
 });
 
 // 404 handler

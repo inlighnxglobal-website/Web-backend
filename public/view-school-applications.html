@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Application Manager - Inlighnx</title>
+    <title>School Application Manager - Inlighnx</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
@@ -50,10 +50,11 @@
                             <a href="/manage-programs"
                                 class="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm">Programs</a>
                             <a href="/view-applications"
-                                class="text-blue-600 border-b-2 border-blue-600 px-3 py-2 font-medium text-sm">Internship
+                                class="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm">Internship
                                 Apps</a>
                             <a href="/view-school-applications"
-                                class="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm">School Apps</a>
+                                class="text-blue-600 border-b-2 border-blue-600 px-3 py-2 font-medium text-sm">School
+                                Apps</a>
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
@@ -71,7 +72,7 @@
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-700">Internship Applications</h2>
+                <h2 class="text-2xl font-bold text-gray-700">School Applications</h2>
                 <span id="applicationCount"
                     class="bg-blue-100 text-blue-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded">0
                     Applications</span>
@@ -93,19 +94,16 @@
                                 Date</th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name</th>
+                                Contact Person</th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Email/Phone</th>
+                                Contact Info</th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                College/State</th>
+                                School / Designation</th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Details</th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Role</th>
+                                Message</th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions</th>
@@ -200,7 +198,7 @@
             tableBody.innerHTML = '';
 
             try {
-                const res = await fetch(`${API_URL}/applications`, {
+                const res = await fetch(`${API_URL}/school-applications`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -238,24 +236,18 @@
                         ${new Date(app.createdAt).toLocaleDateString()}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">${app.fullName}</div>
+                        <div class="text-sm font-medium text-gray-900">${app.name}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm text-gray-900">${app.email}</div>
                         <div class="text-sm text-gray-500">${app.phone}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900 truncate max-w-xs" title="${app.collegeName}">${app.collegeName}</div>
-                        <div class="text-sm text-gray-500">${app.state}</div>
+                        <div class="text-sm text-gray-900 font-semibold">${app.schoolName}</div>
+                        <div class="text-sm text-gray-500">${app.designation}</div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            ${app.userType}
-                        </span>
-                        ${app.userType === 'Student' ? `<div class="text-xs text-gray-500 mt-1">Year: ${app.graduationYear}</div>` : ''}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${app.internshipType ? app.internshipType.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'N/A'}
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900 max-w-xs overflow-hidden text-ellipsis">${app.message || 'N/A'}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button onclick="deleteApplication('${app._id}')" class="text-red-600 hover:text-red-900 transition duration-300">
@@ -272,24 +264,20 @@
                 return;
             }
 
-            // Prepare data for export (flatten/format if needed)
             const exportData = applicationsData.map(app => ({
                 Date: new Date(app.createdAt).toLocaleDateString(),
-                "Full Name": app.fullName,
+                "Contact Name": app.name,
                 "Email": app.email,
                 "Phone": app.phone,
-                "College": app.collegeName,
-                "State": app.state,
-                "User Type": app.userType,
-                "Grad Year": app.graduationYear || 'N/A',
-                "Internship Role": app.internshipType,
-                "Acknowledged": app.acknowledgment ? "Yes" : "No"
+                "School Name": app.schoolName,
+                "Designation": app.designation,
+                "Message": app.message
             }));
 
             const ws = XLSX.utils.json_to_sheet(exportData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Applications");
-            XLSX.writeFile(wb, "Inlighnx_Applications.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "SchoolApplications");
+            XLSX.writeFile(wb, "Inlighnx_School_Applications.xlsx");
         }
 
         async function deleteApplication(id) {
@@ -298,7 +286,7 @@
             }
 
             try {
-                const res = await fetch(`${API_URL}/applications/${id}`, {
+                const res = await fetch(`${API_URL}/school-applications/${id}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -308,7 +296,6 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    // Remove from local data array to avoid fetching again strictly necessary but good UX
                     applicationsData = applicationsData.filter(app => app._id !== id);
                     renderApplications(applicationsData);
                     applicationCount.textContent = `${applicationsData.length} Applications`;
