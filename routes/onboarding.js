@@ -1,5 +1,6 @@
 import express from 'express';
 import Onboarding from '../models/Onboarding.js';
+import Settings from '../models/Settings.js';
 import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -67,6 +68,53 @@ router.delete('/:id', protect, async (req, res) => {
       success: false,
       message: 'Failed to delete onboarding entry',
       error: error.message
+    });
+  }
+});
+
+// Get WhatsApp link (Public)
+router.get('/whatsapp-link', async (req, res) => {
+  try {
+    const setting = await Settings.findOne({ key: 'whatsapp_link' });
+    const defaultLink = 'https://chat.whatsapp.com/FOQ0mur19NsKHjR5907WMb';
+    
+    res.status(200).json({
+      success: true,
+      link: setting ? setting.value : defaultLink
+    });
+  } catch (error) {
+    console.error('Error fetching WhatsApp link:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch WhatsApp link'
+    });
+  }
+});
+
+// Update WhatsApp link (Protected)
+router.post('/whatsapp-link', protect, async (req, res) => {
+  try {
+    const { link } = req.body;
+    if (!link) {
+      return res.status(400).json({ success: false, message: 'Link is required' });
+    }
+
+    const setting = await Settings.findOneAndUpdate(
+      { key: 'whatsapp_link' },
+      { value: link },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'WhatsApp link updated successfully',
+      link: setting.value
+    });
+  } catch (error) {
+    console.error('Error updating WhatsApp link:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update WhatsApp link'
     });
   }
 });
