@@ -8,6 +8,7 @@ import certificateRoutes from './routes/certificate.js';
 import authRoutes from './routes/auth.js';
 import applicationRoutes from './routes/applications.js';
 import schoolApplicationRoutes from './routes/schoolApplications.js';
+import onboardingRoutes from './routes/onboarding.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -49,6 +50,7 @@ app.use('/api/certificates', certificateRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/school-applications', schoolApplicationRoutes);
+app.use('/api/onboarding', onboardingRoutes);
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -76,6 +78,11 @@ app.get('/view-applications', (req, res) => {
 // Serve school applications view
 app.get('/view-school-applications', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'view-school-applications.html'));
+});
+
+// Serve onboarding submissions view
+app.get('/view-onboarding', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'view-onboarding.html'));
 });
 
 // 404 handler
