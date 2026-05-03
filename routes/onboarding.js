@@ -8,7 +8,7 @@ const router = express.Router();
 // Create new onboarding entry
 router.post('/', async (req, res) => {
   try {
-    const { name, email, phone, domain, state, role, verified } = req.body;
+    const { name, email, phone, domain, state, role, verified, shortIntro } = req.body;
     
     const newOnboarding = new Onboarding({
       name,
@@ -17,7 +17,8 @@ router.post('/', async (req, res) => {
       domain,
       state,
       role,
-      verified
+      verified,
+      shortIntro
     });
 
     const savedOnboarding = await newOnboarding.save();

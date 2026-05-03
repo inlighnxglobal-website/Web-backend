@@ -26,6 +26,9 @@ const onboardingSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  shortIntro: {
+    type: String
+  },
   createdAt: {
     type: Date,
     default: Date.now
